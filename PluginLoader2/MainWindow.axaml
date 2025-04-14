@@ -1,0 +1,27 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+        xmlns:ui="using:FluentAvalonia.UI.Controls"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="PluginLoader2.MainWindow"
+        Title="Plugin Loader 2" Loaded="OnWindowInit"
+        Icon="/Assets/app.ico">
+
+  <ui:NavigationView x:Name="mainMenu" PaneDisplayMode="Auto" SelectionChanged="OnMenuSelectionChanged">
+    <ui:NavigationView.MenuItems>
+      <ui:NavigationViewItem Content="Home" Tag="Home">
+        <ui:NavigationViewItem.IconSource>
+          <ic:SymbolIconSource Symbol="PlaySettings" />
+        </ui:NavigationViewItem.IconSource>
+      </ui:NavigationViewItem>
+      <ui:NavigationViewItem Content="Plugins" Tag="Plugins">
+        <ui:NavigationViewItem.IconSource>
+          <ic:SymbolIconSource Symbol="PlugDisconnected" />
+        </ui:NavigationViewItem.IconSource>
+      </ui:NavigationViewItem>
+    </ui:NavigationView.MenuItems>
+  </ui:NavigationView>
+  
+</Window>

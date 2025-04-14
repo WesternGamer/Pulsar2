@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>1ab9c5c3-51d3-4731-9632-60696f1b2b6e</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>PluginLoader2</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Config\ConfigFile.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)FileUtilities.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)GlobalLock.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)HttpUtilities.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\GitHubPlugin.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\ICustomPlugin.cs" />
+    <Compile Include="..\PluginLoader2.Shared\Plugins\PluginHubData.cs" />
+    <Compile Include="..\PluginLoader2.Shared\Plugins\List\PluginHubList.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\List\LocalPluginList.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\IAssemblyResolver.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\LocalPlugin.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Config\LoaderConfig.cs" />
+  </ItemGroup>
+</Project>

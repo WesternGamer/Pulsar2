@@ -1,0 +1,32 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="using:FluentAvalonia.UI.Controls"
+             xmlns:vm="using:PluginLoader2.ViewModels"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="PluginLoader2.Pages.SettingsPage" x:DataType="vm:LauncherConfigModel">
+  <StackPanel Margin="10">
+    <StackPanel Orientation="Horizontal">
+      <Label Grid.Row="1" Grid.Column="0" VerticalAlignment="Center">Disable Auto Start</Label>
+      <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding DisableAutoStart}"></CheckBox>
+    </StackPanel>
+
+    <Label>Local Plugin Repositories</Label>
+    <ListBox x:Name="pluginFoldersList" Margin="5" Background="{DynamicResource LayerFillColorAltBrush}" Height="200" ItemsSource="{Binding LocalPluginRepositories}" SelectionChanged="ListBox_SelectionChanged">
+      
+    </ListBox>
+    <StackPanel Orientation="Horizontal" Spacing="10">
+      <Button Height="34" ToolTip.Tip="Add plugins folder" Click="AddFolderClick">
+        <ic:SymbolIcon Symbol="FolderAdd" />
+      </Button>
+      <Button x:Name="deleteSelectedFolderButton" Height="34" IsEnabled="False" ToolTip.Tip="Delete selected plugins folder" Click="DeleteFolderClick">
+        <ic:SymbolIcon Symbol="Delete"/>
+      </Button>
+    </StackPanel>
+    <ui:TeachingTip x:Name="saveTip" Title="Save Changes?"
+                    ActionButtonContent="Save" ActionButtonClick="OnTipButtonClicked"
+                    CloseButtonContent="Discard" CloseButtonClick="OnTipClosed"/>
+  </StackPanel>
+</UserControl>
