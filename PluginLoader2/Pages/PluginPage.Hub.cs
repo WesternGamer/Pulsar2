@@ -2,6 +2,7 @@
 using Avalonia.Threading;
 using HarfBuzzSharp;
 using MessagePack;
+using PluginLoader2.Config;
 using PluginLoader2.Plugins;
 using PluginLoader2.Plugins.List;
 using PluginLoader2.ViewModels;
@@ -30,7 +31,7 @@ partial class PluginsPage
         {
             pluginHubData = await hubList.GetHubData(cancelToken);
 #if DEBUG
-            GitHubPlugin testPlugin = new GitHubPlugin()
+            GitHubPluginData testPlugin = new GitHubPluginData()
             {
                 Id = "asdfjkl",
                 Name = "Test plugin",
@@ -40,10 +41,10 @@ partial class PluginsPage
                 ShortDescription = "Allows scrolling between welder, grinder, and drill.",
                 LongDescription = "This plugin is a simplified version of the Tool Switcher mod. It allows you to scroll between the welder, grinder, and drill. There is no configuration yet, so these tools will always be grouped together while the plugin is enabled. The benefits of this plugin over the mod are that you can use any toolbar page, and it will work on any multiplayer server."
             };
-            XmlSerializer xml = new XmlSerializer(typeof(GitHubPlugin));
+            XmlSerializer xml = new XmlSerializer(typeof(GitHubPluginData));
             using (FileStream fs = File.OpenWrite(@"D:\Downloads\pluginhub2test\test.xml"))
                 xml.Serialize(fs, testPlugin);
-            pluginHubData.GitHubPlugins = new List<GitHubPlugin>(pluginHubData.GitHubPlugins.Append(testPlugin)).ToArray();
+            pluginHubData.GitHubPlugins = new List<GitHubPluginData>(pluginHubData.GitHubPlugins.Append(testPlugin)).ToArray();
 #endif
         }
         catch (OperationCanceledException)
@@ -56,7 +57,7 @@ partial class PluginsPage
 
     }
 
-    private void OnGitHubPluginAdded(GitHubPlugin plugin)
+    private void OnGitHubPluginAdded(GitHubPluginData plugin)
     {
         Dispatcher.UIThread.Post(() =>
         {

@@ -13,11 +13,11 @@ namespace PluginLoader2.Plugins.List;
 
 class LocalPluginList
 {
-    private readonly ConcurrentDictionary<string, LocalPlugin> localPlugins = [];
+    private readonly ConcurrentDictionary<string, LocalPluginData> localPlugins = [];
 
-    public IEnumerable<LocalPlugin> LocalPlugins => localPlugins.Values;
+    public IEnumerable<LocalPluginData> LocalPlugins => localPlugins.Values;
 
-    public event Action<LocalPlugin> OnPluginAdded;
+    public event Action<LocalPluginData> OnPluginAdded;
 
     public LocalPluginList()
     {
@@ -49,7 +49,7 @@ class LocalPluginList
         {
             cancelToken.ThrowIfCancellationRequested();
 
-            if (!localPlugins.ContainsKey(dll) && TryCreateDllPlugin(dll, out LocalPlugin local, cancelToken))
+            if (!localPlugins.ContainsKey(dll) && TryCreateDllPlugin(dll, out LocalPluginData local, cancelToken))
             {
                 OnPluginAdded?.Invoke(local);
                 localPlugins[local.FullPath] = local;
@@ -58,7 +58,7 @@ class LocalPluginList
     }
 
 
-    public static bool TryCreateDllPlugin(string dllFile, out LocalPlugin result, CancellationToken cancelToken = default)
+    public static bool TryCreateDllPlugin(string dllFile, out LocalPluginData result, CancellationToken cancelToken = default)
     {
         result = null;
 
@@ -78,7 +78,7 @@ class LocalPluginList
         if (!ContainsIPlugin(dllFile, cancelToken))
             return false;
 
-        result = new LocalPlugin(dllFile, assemblyName);
+        result = new LocalPluginData(dllFile, assemblyName);
         return true;
     }
 

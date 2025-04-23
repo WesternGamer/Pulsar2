@@ -33,7 +33,7 @@ partial class PluginsPage
         return true;
     }
 
-    private void OnLocalPluginAdded(LocalPlugin plugin)
+    private void OnLocalPluginAdded(LocalPluginData plugin)
     {
         // This is called during loading of the local plugin list
         Dispatcher.UIThread.Post(() =>

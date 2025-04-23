@@ -84,11 +84,11 @@ class LoaderConfigModel : INotifyPropertyChanged
         config.Save();
     }
 
-    private IEnumerable<LocalPluginModel> GetModel(IEnumerable<LocalPlugin> plugins, HashSet<string> enabledPlugins)
+    private IEnumerable<LocalPluginModel> GetModel(IEnumerable<LocalPluginData> plugins, HashSet<string> enabledPlugins)
     {
         return plugins.Select(x => new LocalPluginModel(x, enabledPlugins.Contains(x.FullPath))).OrderByDescending(x => x.Enabled);
     }
-    private IEnumerable<GitHubPluginModel> GetModel(IEnumerable<GitHubPlugin> plugins, HashSet<string> enabledPlugins)
+    private IEnumerable<GitHubPluginModel> GetModel(IEnumerable<GitHubPluginData> plugins, HashSet<string> enabledPlugins)
     {
         return plugins.Select(x => new GitHubPluginModel(x, enabledPlugins.Contains(x.Id))).OrderByDescending(x => x.Enabled);
     }

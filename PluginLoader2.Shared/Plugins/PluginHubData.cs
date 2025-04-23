@@ -1,4 +1,5 @@
 ﻿using MessagePack;
+using System.Net.Http.Headers;
 
 namespace PluginLoader2.Plugins
 {
@@ -6,9 +7,39 @@ namespace PluginLoader2.Plugins
     internal class PluginHubData
     {
         [Key(0)]
-        public string Hash { get; set; }
+        public Hash Tag { get; set; }
 
         [Key(1)]
-        public GitHubPlugin[] GitHubPlugins { get; set; } = [];
+        public GitHubPluginData[] GitHubPlugins { get; set; } = [];
+        
+        public bool HasValidTag()
+        {
+            return Tag != null && !string.IsNullOrEmpty(Tag.EntityTag);
+        }
+
+        [MessagePackObject(AllowPrivate = true)]
+        public class Hash
+        {
+
+            [Key(0)]
+            public string EntityTag { get; set; }
+
+            [Key(1)]
+            public bool WeakTag { get; set; }
+
+            [IgnoreMember]
+            public EntityTagHeaderValue Header => new EntityTagHeaderValue(EntityTag, WeakTag);
+
+            public Hash()
+            {
+            }
+
+            public Hash(EntityTagHeaderValue etagHeader)
+            {
+                EntityTag = etagHeader.Tag;
+                WeakTag = etagHeader.IsWeak;
+            }
+
+        }
     }
 }

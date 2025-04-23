@@ -10,16 +10,14 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)Config\ConfigFile.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)config\GitHubKey.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)FileUtilities.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)GlobalLock.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)HttpUtilities.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Plugins\GitHubPlugin.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Plugins\ICustomPlugin.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\GitHubPluginData.cs" />
     <Compile Include="..\PluginLoader2.Shared\Plugins\PluginHubData.cs" />
     <Compile Include="..\PluginLoader2.Shared\Plugins\List\PluginHubList.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Plugins\List\LocalPluginList.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Plugins\IAssemblyResolver.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Plugins\LocalPlugin.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Plugins\LocalPluginData.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Config\LoaderConfig.cs" />
   </ItemGroup>
 </Project>

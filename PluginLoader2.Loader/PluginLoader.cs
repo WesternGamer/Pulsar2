@@ -12,13 +12,16 @@ using PluginLoader2.Loader.Plugins;
 using System.Text;
 using PluginLoader2.Plugins.List;
 using System.Xml.Schema;
+using PluginLoader2.Loader.Compile;
+using System.Threading.Tasks;
+using System.Linq;
 
 
 namespace PluginLoader2.Loader
 {
     public class PluginLoader : IPlugin
     {
-        private List<Plugin> runningPlugins = new List<Plugin>();
+        private List<PluginRuntime> runningPlugins = new List<PluginRuntime>();
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         public PluginLoader(PluginHost host)
@@ -29,6 +32,8 @@ namespace PluginLoader2.Loader
             Log.Info("Starting Plugin Loader");
 
             ISplashScreen splashScreen = GameSplashScreen.GetSplashScreen();
+
+            GlobalReferences.GenerateAssemblyList();
 
             Log.Info("Loading config");
             LoaderConfig config = GetConfig(splashScreen);
@@ -44,25 +49,11 @@ namespace PluginLoader2.Loader
             Log.Info("Finding plugins...");
             StringBuilder sb = new StringBuilder();
             sb.Append("Enabled plugins: ").AppendLine();
-            foreach(string dll in config.LocalPlugins)
-            {
-                if(LocalPluginList.TryCreateDllPlugin(dll, out LocalPlugin pluginData))
-                {
-                    runningPlugins.Add(new Plugin(pluginData));
-                    sb.Append(pluginData.FullPath).AppendLine();
-                }
-                else
-                {
-                    Log.Error("Plugin " + dll + " could not be loaded");
-                }
-            }
+            runningPlugins.AddRange(GetLocalPlugins(config, sb).Concat(GetGithubPlugins(config, sb)));
             Log.Info(sb.ToString());
 
-            PluginHubList github = new PluginHubList(HttpUtilities.CreateHttpClient());
-
-
             Log.Info("Creating plugin instances");
-            foreach(Plugin plugin in runningPlugins)
+            foreach(PluginRuntime plugin in runningPlugins)
                 plugin.Instantiate(host);
 
             splashScreen.ResetToDefault();
@@ -71,6 +62,42 @@ namespace PluginLoader2.Loader
             Log.Info("Plugin Loader started");
         }
 
+        private IEnumerable<PluginRuntime> GetLocalPlugins(LoaderConfig config, StringBuilder enabledPluginLog)
+        {
+            enabledPluginLog.AppendLine("  Local:");
+            foreach (string dll in config.LocalPlugins)
+            {
+                if (LocalPluginList.TryCreateDllPlugin(dll, out LocalPluginData pluginData))
+                {
+                    yield return new PluginRuntime(new LocalPlugin(pluginData));
+                    enabledPluginLog.Append("    ").Append(pluginData.Name).AppendLine();
+                }
+                else
+                {
+                    Log.Error("Plugin " + dll + " could not be loaded");
+                }
+            }
+        }
+
+        private IEnumerable<PluginRuntime> GetGithubPlugins(LoaderConfig config, StringBuilder enabledPluginLog)
+        {
+            enabledPluginLog.AppendLine("  GitHub:");
+            PluginHubList github = new PluginHubList(HttpUtilities.CreateHttpClient());
+            PluginHubData hubData = Task.Run(() => github.GetHubData()).GetAwaiter().GetResult();
+            Dictionary<string, GitHubPluginData> dataById = hubData.GitHubPlugins.ToDictionary(x => x.Id);
+            foreach(string githubId in config.GitHubPlugins)
+            {
+                if(dataById.TryGetValue(githubId, out GitHubPluginData data))
+                {
+                    yield return new PluginRuntime(new GitHubPlugin(data));
+                    enabledPluginLog.Append("    ").Append(data.Name).AppendLine();
+                }
+                else
+                {
+                    Log.Error("Plugin " + githubId + " was not found on the Plugin Hub");
+                }
+            }
+        }
 
         private LoaderConfig GetConfig(ISplashScreen splashScreen)
         {

@@ -25,7 +25,7 @@ class LocalPluginModel : INotifyPropertyChanged, IPluginModel
 
     public LocalPluginModel() { }
 
-    public LocalPluginModel(LocalPlugin data, bool enabled)
+    public LocalPluginModel(LocalPluginData data, bool enabled)
     {
         this.enabled = enabled;
         FullPath = data.FullPath;

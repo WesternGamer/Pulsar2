@@ -7,7 +7,7 @@ using System.Reflection;
 
 namespace PluginLoader2.Loader.Plugins;
 
-internal class AssemblyResolver : IAssemblyResolver
+internal class AssemblyResolver
 {
     private readonly HashSet<string> allowedAssemblyNames = new HashSet<string>();
     private readonly HashSet<string> allowedAssemblyFiles = new HashSet<string>();

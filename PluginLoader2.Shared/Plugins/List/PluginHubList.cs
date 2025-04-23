@@ -1,9 +1,11 @@
 ﻿using MessagePack;
 using System;
 using System.Collections.Generic;
+using System.Drawing.Imaging;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
@@ -19,10 +21,11 @@ class PluginHubList
 
     private const string repoZipUrl = "https://github.com/{0}/archive/{1}.zip";
     private const string rawUrl = "https://raw.githubusercontent.com/{0}/{1}/";
+    private const string pluginHub = "https://github.com/sepluginloader/PluginHub2/archive/main.zip";
 
     private readonly HttpClient web;
 
-    public event Action<GitHubPlugin> OnGitHubPluginDownloaded;
+    public event Action<GitHubPluginData> OnGitHubPluginDownloaded;
 
     public PluginHubList() : this(new HttpClient())
     { }
@@ -34,57 +37,43 @@ class PluginHubList
 
     public async Task<PluginHubData> GetHubData(CancellationToken cancelToken = default)
     {
-        Uri uri = new Uri("https://github.com/sepluginloader/PluginHub2/archive/main.zip");
-        Log.Info("Starting download of " + uri);
-        using HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, uri);
+        PluginHubData cache = await ReadPluginCache(cancelToken);
 
-        Task<HttpResponseMessage> hubTask = SendRequest(request, cancelToken);
-        Task<PluginHubData> cacheTask = ReadPluginCache(cancelToken);
-        await Task.WhenAll(hubTask, cacheTask);
+        Log.Info("Checking " + pluginHub);
+        using HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, pluginHub);
 
+        if (cache != null && cache.HasValidTag())
+            request.Headers.IfNoneMatch.Add(cache.Tag.Header);
 
-        using HttpResponseMessage response = await hubTask;
-        PluginHubData cache = await cacheTask;
-        if(cache == null)
+        using HttpResponseMessage response = await SendRequest(request, cancelToken);
+
+        if (response == null || response.StatusCode == HttpStatusCode.NotModified)
         {
-            if(response == null)
-            {
+            if (cache == null)
                 Log.Error("Failed to load Plugin Hub data");
-                return null;
-            }
-        }
-        else
-        {
-            if (response == null)
-            {
+            else
                 Log.Info("Using cached Plugin Hub content");
-                return cache;
-            }
+            return cache;
         }
 
         EntityTagHeaderValue etagHeader = response.Headers.ETag;
-        if (etagHeader.IsWeak)
-            Log.Warn("GitHub provided a weak etag header");
-        string etag = null;
         if (etagHeader == null || string.IsNullOrEmpty(etagHeader.Tag))
         {
             Log.Warn("GitHub Etag is null");
         }
         else
         {
-            if (cache != null && !string.IsNullOrEmpty(cache.Hash) && cache.Hash == etagHeader.Tag)
-            {
-                Log.Info("Using cached Plugin Hub content");
-                return cache;
-            }
-            etag = etagHeader.Tag;
+            if (etagHeader.IsWeak)
+                Log.Warn("GitHub provided a weak etag header");
         }
 
         Log.Info("Downloading Plugin Hub zip file");
+
         try
         {
             cache = await ReadHubFile(response, cancelToken);
-            cache.Hash = etag;
+            if(etagHeader != null && !string.IsNullOrEmpty(etagHeader.Tag))
+                cache.Tag = new PluginHubData.Hash(etagHeader);
         }
         catch (OperationCanceledException)
         {
@@ -109,18 +98,17 @@ class PluginHubList
             Log.Error("Error while caching Plugin Hub zip file: ", ex);
         }
         return cache;
-
     }
 
     private async Task<PluginHubData> ReadHubFile(HttpResponseMessage response, CancellationToken cancelToken = default)
     {
         using Stream zipFileStream = await response.Content.ReadAsStreamAsync(cancelToken);
 
-        List<GitHubPlugin> plugins = new List<GitHubPlugin>();
+        List<GitHubPluginData> plugins = new List<GitHubPluginData>();
 
         using (ZipArchive zipFile = new ZipArchive(zipFileStream))
         {
-            XmlSerializer xml = new XmlSerializer(typeof(GitHubPlugin));
+            XmlSerializer xml = new XmlSerializer(typeof(GitHubPluginData));
             foreach (ZipArchiveEntry entry in zipFile.Entries)
             {
                 if (!entry.FullName.EndsWith("xml", StringComparison.OrdinalIgnoreCase))
@@ -130,7 +118,7 @@ class PluginHubList
                 using StreamReader entryReader = new StreamReader(entryStream);
                 try
                 {
-                    GitHubPlugin data = (GitHubPlugin)xml.Deserialize(entryReader);
+                    GitHubPluginData data = (GitHubPluginData)xml.Deserialize(entryReader);
                     OnGitHubPluginDownloaded?.Invoke(data);
                     plugins.Add(data);
                 }
@@ -157,7 +145,12 @@ class PluginHubList
     {
         try
         {
-            return await web.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancelToken);
+            HttpResponseMessage response = await web.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancelToken);
+            if (response.IsSuccessStatusCode || response.StatusCode == HttpStatusCode.NotModified)
+                return response;
+
+            Log.Error("Error while downloading plugin data from hub: Response code: " + response.StatusCode);
+            return null;
         }
         catch (OperationCanceledException)
         {

@@ -17,12 +17,12 @@ class GitHubPluginModel : INotifyPropertyChanged, IPluginModel
         }
     }
 
-    public GitHubPlugin Data { get; } = new GitHubPlugin();
+    public GitHubPluginData Data { get; } = new GitHubPluginData();
     public string Name { get; }
 
     public GitHubPluginModel() { }
 
-    public GitHubPluginModel(GitHubPlugin data, bool enabled)
+    public GitHubPluginModel(GitHubPluginData data, bool enabled)
     {
         this.enabled = enabled;
         Data = data;

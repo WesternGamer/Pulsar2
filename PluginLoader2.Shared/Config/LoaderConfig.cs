@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Xml.Serialization;
 
 namespace PluginLoader2.Config;
 
@@ -12,6 +11,8 @@ public class LoaderConfig : ConfigFile
     {
         if (LocalPlugins == null)
             LocalPlugins = [];
+        if (GitHubPlugins == null)
+            GitHubPlugins = [];
     }
 
 }

@@ -7,19 +7,19 @@ using System.Reflection;
 
 namespace PluginLoader2.Loader.Plugins
 {
-    internal class Plugin
+    internal class PluginRuntime
     {
-        private ICustomPlugin data;
+        private IPluginInstance instance;
         private IPlugin plugin;
 
-        public Plugin (ICustomPlugin data)
+        public PluginRuntime (IPluginInstance instance)
         {
-            this.data = data;
+            this.instance = instance;
         }
 
         public void Instantiate(PluginHost host)
         {
-            Assembly assembly = data.GetAssembly(new AssemblyResolver());
+            Assembly assembly = instance.Load();
             Type[] types = assembly.GetTypes();
             foreach (Type type in types)
             {

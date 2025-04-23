@@ -1,0 +1,41 @@
+﻿using MessagePack;
+using System;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Xml.Serialization;
+
+namespace PluginLoader2.Plugins;
+
+[MessagePackObject]
+public class GitHubPluginData
+{
+    [Key(0)]
+    public string Id { get; set; }
+    [Key(1)]
+    public string Username { get; set; }
+    [Key(2)]
+    public string Repository { get; set; }
+    [Key(3)]
+    public string Name { get; set; }
+    [Key(4)]
+    public string Author { get; set; }
+    [Key(5)]
+    public string ShortDescription { get; set; }
+    [Key(6)]
+    public string LongDescription { get; set; }
+    [Key(7)]
+    public Branch[] Versions { get; set; }
+
+    [MessagePackObject]
+    [XmlRoot("Version")]
+    public class Branch
+    {
+        [Key(0)]
+        public string Name { get; set; }
+        [Key(1)]
+        public string Commit { get; set; }
+        [Key(2)]
+        public string Version { get; set; }
+    }
+
+}
