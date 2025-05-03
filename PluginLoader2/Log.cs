@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Core;
@@ -30,6 +31,13 @@ internal static class Log
         log = logConfig.CreateLogger();
 
         AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+
+        try
+        {
+            AssemblyName a = Assembly.GetExecutingAssembly().GetName();
+            Info($"Starting {a.Name} - v{a.Version}");
+        }
+        catch { }
     }
 
     private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)

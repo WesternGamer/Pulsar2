@@ -30,7 +30,6 @@ namespace PluginLoader2.Loader
             Directory.CreateDirectory(FileUtilities.AppData);
 
             Log.Init(Path.Combine(FileUtilities.AppData, "logs", "loader.log"));
-            Log.Info("Starting Plugin Loader");
 
             ISplashScreen splashScreen = GameSplashScreen.GetSplashScreen();
 
