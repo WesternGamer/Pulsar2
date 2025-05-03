@@ -1,52 +1,94 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using Basic.Reference.Assemblies;
+using HarmonyLib;
+using Microsoft.CodeAnalysis;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using Keen.Game2;
 
 namespace PluginLoader2.Loader.Compile;
 
 static class GlobalReferences
 {
-    private static Dictionary<AssemblyKey, MetadataReference> allReferences = new Dictionary<AssemblyKey, MetadataReference>();
+    private static Dictionary<string, MetadataReference> systemReferences = [];
+    private static Dictionary<AssemblyKey, MetadataReference> allReferences = [];
 
     public static void GenerateAssemblyList()
     {
         if (allReferences.Count > 0)
             return;
 
-        Stack<Assembly> loadedAssemblies = new(AppDomain.CurrentDomain.GetAssemblies().Where(IsValidReference));
-
         StringBuilder sb = new StringBuilder();
 
         sb.AppendLine();
         string line = "===================================";
+
         sb.AppendLine(line);
-        sb.AppendLine("Assembly References");
+        sb.AppendLine("Reference Assemblies");
+        sb.AppendLine(line);
+
+        systemReferences = ReferenceAssemblies.Net80.ToDictionary(x => Path.GetFileNameWithoutExtension(x.FilePath), x => (MetadataReference)x);
+        foreach (string name in systemReferences.Keys)
+            sb.AppendLine(name);
+
+        Dictionary<AssemblyKey, Assembly> loadedAssemblies = [];
+
+        sb.AppendLine(line);
+        sb.AppendLine("Trusted Platform Assemblies");
+        sb.AppendLine(line);
+
+        foreach (string trustedAssemblyFile in GetBinAssemblies())
+        {
+            if(AssemblyKey.TryGetFromFile(trustedAssemblyFile, out AssemblyKey trustedAssemblyName)
+                && !systemReferences.ContainsKey(trustedAssemblyName.Name)
+                && TryLoadAssembly(trustedAssemblyName.FullName, out Assembly trustedAssembly)
+                && loadedAssemblies.TryAdd(trustedAssemblyName, trustedAssembly))
+            {
+                allReferences.TryAdd(trustedAssemblyName, MetadataReference.CreateFromFile(trustedAssemblyFile));
+                sb.AppendLine(trustedAssembly.FullName);
+            }
+        }
+
+        sb.AppendLine(line);
+        sb.AppendLine("Loaded Assemblies");
+        sb.AppendLine(line);
+
+        foreach(Assembly a in AppDomain.CurrentDomain.GetAssemblies().Where(IsValidReference).Concat(ManualReferences()))
+        {
+            AssemblyKey key = new AssemblyKey(a);
+            if(!systemReferences.ContainsKey(key.Name) && loadedAssemblies.TryAdd(key, a))
+            {
+                allReferences.TryAdd(key, MetadataReference.CreateFromFile(a.Location));
+                sb.AppendLine(a.FullName);
+            }
+        }
+
+        sb.AppendLine(line);
+        sb.AppendLine("Dependency Assemblies");
         sb.AppendLine(line);
 
         try
         {
-            foreach (Assembly a in loadedAssemblies)
-            {
-                AddAssemblyReference(a);
-                sb.AppendLine(a.FullName);
-            }
 
-            sb.AppendLine(line);
-            while (loadedAssemblies.Count > 0)
+            Stack<Assembly> workingAssemblies = new(loadedAssemblies.Values);
+            while (workingAssemblies.Count > 0)
             {
-                Assembly a = loadedAssemblies.Pop();
+                Assembly a = workingAssemblies.Pop();
 
-                foreach (AssemblyName name in a.GetReferencedAssemblies())
+                foreach (AssemblyName refName in a.GetReferencedAssemblies())
                 {
-                    if (!ContainsReference(name) && TryLoadAssembly(name, out Assembly aRef) && IsValidReference(aRef))
+                    AssemblyKey key = new(refName);
+                    if (!allReferences.ContainsKey(key)
+                        && !systemReferences.ContainsKey(key.Name)
+                        && TryLoadAssembly(refName, out Assembly aRef) 
+                        && IsValidReference(aRef) 
+                        && allReferences.TryAdd(new AssemblyKey(aRef), MetadataReference.CreateFromFile(aRef.Location)))
                     {
-                        AddAssemblyReference(aRef);
-                        sb.AppendLine(name.FullName);
-                        loadedAssemblies.Push(aRef);
+                        sb.AppendLine(aRef.FullName);
+                        workingAssemblies.Push(aRef);
                     }
                 }
             }
@@ -57,13 +99,23 @@ static class GlobalReferences
             sb.Append("Error: ").Append(e).AppendLine();
             Log.Error(sb.ToString());
         }
-
-        //Log.Info(sb.ToString());
+#if DEBUG
+        Log.Info(sb.ToString());
+#endif
     }
 
-    private static bool ContainsReference(AssemblyName name)
+    private static IEnumerable<string> GetBinAssemblies()
     {
-        return allReferences.ContainsKey(new AssemblyKey(name));
+        string baseGame = Path.GetDirectoryName(Path.GetFullPath(typeof(GameAppComponentObjectBuilder).Assembly.Location));
+        string data = AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") as string;
+        if (data == null)
+            return [];
+        return data.Split(';').Where(x => x.StartsWith(baseGame));
+    }
+
+    private static IEnumerable<Assembly> ManualReferences()
+    {
+        yield return typeof(Harmony).Assembly;
     }
 
     private static bool TryLoadAssembly(AssemblyName name, out Assembly aRef)
@@ -80,32 +132,41 @@ static class GlobalReferences
         }
     }
 
-    private static void AddAssemblyReference(Assembly a)
-    {
-        AssemblyKey key = new AssemblyKey(a.GetName());
-        if (!allReferences.ContainsKey(key))
-            allReferences.Add(key, MetadataReference.CreateFromFile(a.Location));
-    }
-
     public static IEnumerable<MetadataReference> GetReferences()
     {
-        return allReferences.Values;
+        return systemReferences.Values.Concat(allReferences.Values);
     }
 
     private static bool IsValidReference(Assembly a)
     {
-        return !a.IsDynamic && !string.IsNullOrWhiteSpace(a.Location);
+        string name = a.GetName().Name;
+        return !a.IsDynamic && !string.IsNullOrWhiteSpace(a.Location) && !systemReferences.ContainsKey(name) && !name.StartsWith("System.Private");
     }
 
     private class AssemblyKey : IEquatable<AssemblyKey>
     {
         public string Name { get; }
+        public int Major => Version.Major;
+        public int Minor => Version.Minor;
+        public int Build => Version.Build;
+        public int Revision => Version.Revision;
         public Version Version { get; }
+        public AssemblyName FullName { get; }
 
         public AssemblyKey(AssemblyName name)
         {
             Name = name.Name;
             Version = name.Version;
+            FullName = name;
+        }
+
+        public AssemblyKey(Assembly a) : this(a.GetName())
+        {
+        }
+
+        public override string ToString()
+        {
+            return $"{Name} - {Version}";
         }
 
         public override bool Equals(object obj)
@@ -117,12 +178,15 @@ static class GlobalReferences
         {
             return other is not null &&
                    Name == other.Name &&
-                   EqualityComparer<Version>.Default.Equals(Version, other.Version);
+                   Major == other.Major &&
+                   Minor == other.Minor &&
+                   Build == other.Build &&
+                   Revision == other.Revision;
         }
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Name, Version);
+            return HashCode.Combine(Name, Major, Minor, Build, Revision);
         }
 
         public static bool operator ==(AssemblyKey left, AssemblyKey right)
@@ -133,6 +197,20 @@ static class GlobalReferences
         public static bool operator !=(AssemblyKey left, AssemblyKey right)
         {
             return !(left == right);
+        }
+
+        public static bool TryGetFromFile(string fileName, out AssemblyKey result)
+        {
+            try
+            {
+                result = new AssemblyKey(AssemblyName.GetAssemblyName(fileName));
+                return true;
+            }
+            catch (Exception e)
+            {
+                result = null;
+                return false;
+            }
         }
     }
 }

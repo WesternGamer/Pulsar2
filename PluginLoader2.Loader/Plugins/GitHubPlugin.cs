@@ -97,6 +97,7 @@ class GitHubPlugin : IPluginInstance
     public byte[] CompileFromSource(string assemblyName, GitHubCacheManifest manifest, Branch branch)
     {
         RoslynCompiler compiler = new RoslynCompiler();
+        compiler.AddImplicitUsings();
 
         using (Stream s = DownloadRepo(branch.Commit))
         using (ZipArchive zip = new ZipArchive(s))

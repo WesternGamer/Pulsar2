@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis.Text;
+using System.Text;
 
 namespace PluginLoader2.Loader.Compile;
 
@@ -13,6 +14,8 @@ class RoslynCompiler
 {
     private readonly List<Source> source = new List<Source>();
     private readonly bool debugBuild;
+
+    private static readonly string[] ImplicitUsings = [ "System", "System.Collections.Generic", "System.IO", "System.Linq", "System.Net.Http", "System.Threading", "System.Threading.Tasks" ];
 
 
     public RoslynCompiler(bool debugBuild = false)
@@ -23,6 +26,17 @@ class RoslynCompiler
     public void AddSource(Stream stream, string fileName)
     {
         source.Add(new Source(stream, fileName, debugBuild));
+    }
+
+    public void AddImplicitUsings()
+    {
+        StringBuilder sb = new StringBuilder();
+        foreach (string s in ImplicitUsings)
+        {
+            sb.Append("global using global::").Append(s).Append(';').AppendLine();
+        }
+        SourceText sourceText = SourceText.From(sb.ToString());
+        source.Add(new Source(sourceText, null));
     }
 
     public void Compile(string assemblyName, CompilerReferences references, Stream assemblyOutput, Stream debugSymbolOutput = null)
@@ -95,6 +109,11 @@ class RoslynCompiler
             {
                 Tree = CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.Latest));
             }
+        }
+        public Source(SourceText source, string name)
+        {
+            Name = name;
+            Tree = CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.Latest));
         }
     }
 }
