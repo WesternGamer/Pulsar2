@@ -30,22 +30,6 @@ partial class PluginsPage
         try
         {
             pluginHubData = await hubList.GetHubData(cancelToken);
-#if DEBUG
-            GitHubPluginData testPlugin = new GitHubPluginData()
-            {
-                Id = "asdfjkl",
-                Name = "Test plugin",
-                Username = "sepluginloader",
-                Repository = "PluginHub2",
-                Author = "avaness",
-                ShortDescription = "Allows scrolling between welder, grinder, and drill.",
-                LongDescription = "This plugin is a simplified version of the Tool Switcher mod. It allows you to scroll between the welder, grinder, and drill. There is no configuration yet, so these tools will always be grouped together while the plugin is enabled. The benefits of this plugin over the mod are that you can use any toolbar page, and it will work on any multiplayer server."
-            };
-            XmlSerializer xml = new XmlSerializer(typeof(GitHubPluginData));
-            using (FileStream fs = File.OpenWrite(@"D:\Downloads\pluginhub2test\test.xml"))
-                xml.Serialize(fs, testPlugin);
-            pluginHubData.GitHubPlugins = new List<GitHubPluginData>(pluginHubData.GitHubPlugins.Append(testPlugin)).ToArray();
-#endif
         }
         catch (OperationCanceledException)
         {
@@ -61,10 +45,10 @@ partial class PluginsPage
     {
         Dispatcher.UIThread.Post(() =>
         {
-            if (loaderConfig.GitHubPlugins.Contains(plugin.Id))
-                context.GitHubPlugins.Insert(0, new GitHubPluginModel(plugin, true));
+            if (loaderConfig.GitHubPlugins.TryGetValue(plugin.Id, out GitHubPluginConfig config))
+                context.GitHubPlugins.Insert(0, new GitHubPluginModel(plugin, config));
             else
-                context.GitHubPlugins.Add(new GitHubPluginModel(plugin, false));
+                context.GitHubPlugins.Add(new GitHubPluginModel(plugin, null));
         });
     }
 
@@ -88,5 +72,11 @@ partial class PluginsPage
         {
             hubPluginDetailsPane.IsVisible = false;
         }
+    }
+
+    private void GitHubPluginBranchChanged(object sender, Avalonia.Controls.SelectionChangedEventArgs e)
+    {
+        
+        PromptSave();
     }
 }

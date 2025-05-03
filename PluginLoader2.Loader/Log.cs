@@ -81,7 +81,7 @@ namespace PluginLoader2
             log.Error(ex, msg);
         }
 
-        private static void Write(LogEventLevel level, string msg)
+        public static void Write(LogEventLevel level, string msg)
         {
             log.Write(level, msg);
         }

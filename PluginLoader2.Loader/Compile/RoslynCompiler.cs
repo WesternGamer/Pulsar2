@@ -12,12 +12,11 @@ namespace PluginLoader2.Loader.Compile;
 class RoslynCompiler
 {
     private readonly List<Source> source = new List<Source>();
-    private readonly CompilerReferences references;
     private readonly bool debugBuild;
-    
-    public RoslynCompiler(CompilerReferences references, bool debugBuild = false)
+
+
+    public RoslynCompiler(bool debugBuild = false)
     {
-        this.references = references;
         this.debugBuild = debugBuild;
     }
 
@@ -26,7 +25,7 @@ class RoslynCompiler
         source.Add(new Source(stream, fileName, debugBuild));
     }
 
-    public void Compile(string assemblyName, Stream assemblyOutput, Stream debugSymbolOutput)
+    public void Compile(string assemblyName, CompilerReferences references, Stream assemblyOutput, Stream debugSymbolOutput = null)
     {
         CSharpCompilation compilation = CSharpCompilation.Create(
             assemblyName,

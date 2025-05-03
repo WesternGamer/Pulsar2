@@ -1,18 +1,31 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
+using System.Xml.Serialization;
 
 namespace PluginLoader2.Config;
 
 public class LoaderConfig : ConfigFile
 {
-    public HashSet<string> LocalPlugins { get; set; } = [];
-    public HashSet<string> GitHubPlugins { get; set; } = [];
+    public LocalPluginConfig[] LocalPluginList
+    {
+        get => LocalPlugins.Values.ToArray();
+        set => LocalPlugins = value.ToDictionary(x => x.FullPath);
+    }
+    [XmlIgnore]
+    public Dictionary<string, LocalPluginConfig> LocalPlugins { get; set; } = [];
+
+    public GitHubPluginConfig[] GitHubPluginList 
+    {
+        get => GitHubPlugins.Values.ToArray();
+        set => GitHubPlugins = value.ToDictionary(x => x.Id);
+    }
+    [XmlIgnore]
+    public Dictionary<string, GitHubPluginConfig> GitHubPlugins { get; set; } = [];
 
     protected override void Init()
     {
-        if (LocalPlugins == null)
-            LocalPlugins = [];
-        if (GitHubPlugins == null)
-            GitHubPlugins = [];
+        LocalPlugins ??= [];
+        GitHubPlugins ??= [];
     }
 
 }

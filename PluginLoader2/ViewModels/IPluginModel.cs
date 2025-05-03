@@ -2,6 +2,7 @@
 {
     interface IPluginModel
     {
+        string Id { get; }
         bool Enabled { get; set; }
     }
 }

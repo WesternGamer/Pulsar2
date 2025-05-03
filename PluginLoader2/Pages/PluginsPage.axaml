@@ -33,12 +33,12 @@
             </DataGrid.Styles>
             <DataGrid.Columns>
               <DataGridCheckBoxColumn Header="Enabled" Binding="{Binding Enabled}" IsReadOnly="True"/>
-              <DataGridTextColumn Header="Name" Binding="{Binding Name}" IsReadOnly="True"/>
-              <DataGridTextColumn Header="Version" Binding="{Binding Version}" IsReadOnly="True"/>
+              <DataGridTextColumn Header="Name" Binding="{Binding Data.Name}" IsReadOnly="True"/>
+              <DataGridTextColumn Header="Version" Binding="{Binding Data.Version}" IsReadOnly="True"/>
               <DataGridTemplateColumn Header="File" IsReadOnly="True">
                 <DataGridTemplateColumn.CellTemplate>
                   <DataTemplate DataType="vm:LocalPluginModel">
-                    <TextBlock Text="{Binding FileName}" VerticalAlignment="Center" HorizontalAlignment="Left" ToolTip.Tip="{Binding FullPath}" Margin="12,0,12,0"/>
+                    <TextBlock Text="{Binding Data.FileName}" VerticalAlignment="Center" HorizontalAlignment="Left" ToolTip.Tip="{Binding Data.FullPath}" Margin="12,0,12,0"/>
                   </DataTemplate>
                 </DataGridTemplateColumn.CellTemplate>
               </DataGridTemplateColumn>
@@ -66,13 +66,15 @@
         </TabItem.Header>
         <DockPanel>
 
-          <ScrollViewer IsVisible="False" x:Name="hubPluginDetailsPane" DockPanel.Dock="Right" Margin="10 0"  Width="200" x:DataType="vm:GitHubPluginModel">
-            <StackPanel>
+          <ScrollViewer IsVisible="False" x:Name="hubPluginDetailsPane" DockPanel.Dock="Right" Margin="10 0"  Width="200">
+            <StackPanel x:DataType="vm:GitHubPluginModel">
               <TextBlock Theme="{StaticResource TitleTextBlockStyle}" Text="{Binding Data.Name}">Plugin Name</TextBlock>
               <TextBlock Theme="{StaticResource SubtitleTextBlockStyle}" Text="{Binding Path=Data.Author, StringFormat='by {0}'}">by Author</TextBlock>
               <TextBlock Margin="5" TextWrapping="Wrap" Text="{Binding Data.LongDescription}">
                 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
               </TextBlock>
+              <Label Content="Installed Version" IsVisible="{Binding Enabled}"/>
+              <ComboBox ItemsSource="{Binding Data.Versions}" SelectedItem="{Binding Version}" SelectionChanged="GitHubPluginBranchChanged" IsVisible="{Binding Enabled}"/>
             </StackPanel>
           </ScrollViewer>
           
@@ -91,7 +93,6 @@
               <DataGridCheckBoxColumn Header="Enabled" x:DataType="vm:GitHubPluginModel" Binding="{Binding Enabled}" IsReadOnly="True"/>
               <DataGridTextColumn Header="Name" x:DataType="vm:GitHubPluginModel" Binding="{Binding Data.Name}" IsReadOnly="True"/>
               <DataGridTextColumn Header="Author" x:DataType="vm:GitHubPluginModel" Binding="{Binding Data.Author}" IsReadOnly="True"/>
-
             </DataGrid.Columns>
           </DataGrid>
           

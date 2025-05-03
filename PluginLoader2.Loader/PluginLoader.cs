@@ -15,6 +15,7 @@ using System.Xml.Schema;
 using PluginLoader2.Loader.Compile;
 using System.Threading.Tasks;
 using System.Linq;
+using System.Net.Http;
 
 
 namespace PluginLoader2.Loader
@@ -49,7 +50,8 @@ namespace PluginLoader2.Loader
             Log.Info("Finding plugins...");
             StringBuilder sb = new StringBuilder();
             sb.Append("Enabled plugins: ").AppendLine();
-            runningPlugins.AddRange(GetLocalPlugins(config, sb).Concat(GetGithubPlugins(config, sb)));
+            IEnumerable<PluginRuntime> githubPlugins = GetGithubPlugins(config, sb, HttpUtilities.CreateHttpClient());
+            runningPlugins.AddRange(GetLocalPlugins(config, sb).Concat(githubPlugins));
             Log.Info(sb.ToString());
 
             Log.Info("Creating plugin instances");
@@ -65,9 +67,9 @@ namespace PluginLoader2.Loader
         private IEnumerable<PluginRuntime> GetLocalPlugins(LoaderConfig config, StringBuilder enabledPluginLog)
         {
             enabledPluginLog.AppendLine("  Local:");
-            foreach (string dll in config.LocalPlugins)
+            foreach (LocalPluginConfig dll in config.LocalPlugins.Values)
             {
-                if (LocalPluginList.TryCreateDllPlugin(dll, out LocalPluginData pluginData))
+                if (LocalPluginList.TryCreateDllPlugin(dll.FullPath, out LocalPluginData pluginData))
                 {
                     yield return new PluginRuntime(new LocalPlugin(pluginData));
                     enabledPluginLog.Append("    ").Append(pluginData.Name).AppendLine();
@@ -79,22 +81,22 @@ namespace PluginLoader2.Loader
             }
         }
 
-        private IEnumerable<PluginRuntime> GetGithubPlugins(LoaderConfig config, StringBuilder enabledPluginLog)
+        private IEnumerable<PluginRuntime> GetGithubPlugins(LoaderConfig config, StringBuilder enabledPluginLog, HttpClient web)
         {
             enabledPluginLog.AppendLine("  GitHub:");
-            PluginHubList github = new PluginHubList(HttpUtilities.CreateHttpClient());
-            PluginHubData hubData = Task.Run(() => github.GetHubData()).GetAwaiter().GetResult();
+            PluginHubList github = new PluginHubList(web);
+            PluginHubData hubData = GameUtils.InvokeSync(() => github.GetHubData());
             Dictionary<string, GitHubPluginData> dataById = hubData.GitHubPlugins.ToDictionary(x => x.Id);
-            foreach(string githubId in config.GitHubPlugins)
+            foreach(GitHubPluginConfig githubConfig in config.GitHubPlugins.Values)
             {
-                if(dataById.TryGetValue(githubId, out GitHubPluginData data))
+                if(dataById.TryGetValue(githubConfig.Id, out GitHubPluginData data))
                 {
-                    yield return new PluginRuntime(new GitHubPlugin(data));
+                    yield return new PluginRuntime(new GitHubPlugin(data, web, githubConfig));
                     enabledPluginLog.Append("    ").Append(data.Name).AppendLine();
                 }
                 else
                 {
-                    Log.Error("Plugin " + githubId + " was not found on the Plugin Hub");
+                    Log.Error("Plugin " + githubConfig + " was not found on the Plugin Hub");
                 }
             }
         }

@@ -1,8 +1,4 @@
 ﻿using MessagePack;
-using System;
-using System.Collections.Generic;
-using System.Reflection;
-using System.Xml.Serialization;
 
 namespace PluginLoader2.Plugins;
 
@@ -24,18 +20,7 @@ public class GitHubPluginData
     [Key(6)]
     public string LongDescription { get; set; }
     [Key(7)]
-    public Branch[] Versions { get; set; }
+    public GitHubPluginBranch[] Versions { get; set; }
 
-    [MessagePackObject]
-    [XmlRoot("Version")]
-    public class Branch
-    {
-        [Key(0)]
-        public string Name { get; set; }
-        [Key(1)]
-        public string Commit { get; set; }
-        [Key(2)]
-        public string Version { get; set; }
-    }
 
 }

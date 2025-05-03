@@ -3,6 +3,7 @@ using Keen.VRage.Library.Reflection;
 using Keen.VRage.Library.Utils;
 using PluginLoader2.Plugins;
 using System;
+using System.Net.Http;
 using System.Reflection;
 
 namespace PluginLoader2.Loader.Plugins

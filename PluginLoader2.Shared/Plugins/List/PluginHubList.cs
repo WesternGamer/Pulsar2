@@ -53,6 +53,7 @@ class PluginHubList
                 Log.Error("Failed to load Plugin Hub data");
             else
                 Log.Info("Using cached Plugin Hub content");
+            cache.GitHubPlugins = cache.GitHubPlugins.Append(DebugPlugin()).ToArray();
             return cache;
         }
 
@@ -63,6 +64,8 @@ class PluginHubList
         }
         else
         {
+            Log.Info($"Etag: {etagHeader}");
+
             if (etagHeader.IsWeak)
                 Log.Warn("GitHub provided a weak etag header");
         }
@@ -100,6 +103,37 @@ class PluginHubList
         return cache;
     }
 
+    private GitHubPluginData DebugPlugin()
+    {
+#if DEBUG
+        GitHubPluginData testPlugin = new GitHubPluginData()
+        {
+            Id = "DevToolEnabled",
+            Name = "Avalonia DevTools",
+            Username = "ArthurGamerHD",
+            Repository = "SE2-UI-DevTool-Enabler",
+            Author = "Arthur",
+            ShortDescription = "Enables Avalonia Dev Tools (by pressing Shift+F12) in game",
+            LongDescription = "Enables Avalonia Dev Tools (by pressing Shift+F12) in game",
+            Versions =
+            [
+                new GitHubPluginBranch()
+                {
+                    Id = "main",
+                    Name = "Main",
+                    Commit = "d74abbbb01640e0f0aaae9dca4beec161e28560a",
+                    Version = "1.0.0",
+                    SourceDirectories = [""]
+                }
+            ]
+        };
+        //XmlSerializer xml = new XmlSerializer(typeof(GitHubPluginData));
+        //using (FileStream fs = File.OpenWrite(@"D:\Downloads\pluginhub2test\test.xml"))
+        //    xml.Serialize(fs, testPlugin);
+        return testPlugin;
+#endif
+    }
+
     private async Task<PluginHubData> ReadHubFile(HttpResponseMessage response, CancellationToken cancelToken = default)
     {
         using Stream zipFileStream = await response.Content.ReadAsStreamAsync(cancelToken);
@@ -111,7 +145,11 @@ class PluginHubList
             XmlSerializer xml = new XmlSerializer(typeof(GitHubPluginData));
             foreach (ZipArchiveEntry entry in zipFile.Entries)
             {
-                if (!entry.FullName.EndsWith("xml", StringComparison.OrdinalIgnoreCase))
+                if (!entry.FullName.EndsWith(".xml", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                string[] entryPath = entry.FullName.Split(['/', '\\'], 3);
+                if (entryPath.Length < 3 || !entryPath[1].Equals("plugins", StringComparison.OrdinalIgnoreCase))
                     continue;
 
                 using Stream entryStream = entry.Open();

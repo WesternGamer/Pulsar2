@@ -58,7 +58,7 @@ static class GlobalReferences
             Log.Error(sb.ToString());
         }
 
-        Log.Info(sb.ToString());
+        //Log.Info(sb.ToString());
     }
 
     private static bool ContainsReference(AssemblyName name)

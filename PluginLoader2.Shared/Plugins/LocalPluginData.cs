@@ -6,13 +6,17 @@ using System.Text;
 
 namespace PluginLoader2.Plugins;
 
-internal class LocalPluginData
+public class LocalPluginData
 {
     public string FullPath { get; set; }
     public string Name { get; set; }
     public string Version { get; set; }
     public string FileName { get; set; }
 
+    public LocalPluginData()
+    {
+
+    }
     public LocalPluginData(string dllFile)
     {
         FileName = Path.GetFileName(dllFile);

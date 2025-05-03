@@ -59,14 +59,13 @@ public partial class PluginsPage : UserControl
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 progressRing.IsVisible = true;
-                context.LocalPlugins.Clear();
                 localPluginsGrid.IsHitTestVisible = false;
                 githubPluginsGrid.IsHitTestVisible = false;
             });
 
             CancellationToken cancelToken = pageCts.Token;
             Task<PluginHubData> hubTask = DownloadPluginList(cancelToken);
-            Task<bool> localTask = RefreshLocalPlugins(cancelToken);
+            Task<bool> localTask = RefreshLocalPlugins(init, cancelToken);
             await Task.WhenAll(hubTask, localTask);
 
             PluginHubData hubData = await hubTask;
@@ -94,6 +93,16 @@ public partial class PluginsPage : UserControl
         }
     }
 
+    private void PluginsGrid_CellPointerPressed(object sender, DataGridCellPointerPressedEventArgs e)
+    {
+        if (Design.IsDesignMode)
+            return;
+        if (e.Column != null && e.Cell?.DataContext is IPluginModel plugin && "Enabled".Equals(e.Column.Header))
+        {
+            plugin.Enabled = !plugin.Enabled;
+            PromptSave();
+        }
+    }
 
     private void PromptSave()
     {

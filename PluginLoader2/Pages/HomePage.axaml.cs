@@ -69,11 +69,11 @@ public partial class HomePage : UserControl
             return;
         }
 
-        foreach(string plugin in loaderConfig.LocalPlugins)
-            PopulatePluginList(Path.GetFileName(plugin), plugin);
+        foreach(LocalPluginConfig plugin in loaderConfig.LocalPlugins.Values)
+            PopulatePluginList(plugin.Name, plugin.FullPath);
 
-        foreach(string plugin in loaderConfig.GitHubPlugins) // TODO: Store plugin names for display to the user
-            PopulatePluginList(plugin, "GitHub: " + plugin);
+        foreach(GitHubPluginConfig plugin in loaderConfig.GitHubPlugins.Values) // TODO: Store plugin names for display to the user
+            PopulatePluginList(plugin.Name, "GitHub: " + plugin.Id);
     }
 
     private void PopulatePluginList(string text, string tooltip = null)

@@ -1,9 +1,11 @@
 ﻿using Avalonia.Controls;
 using Avalonia.Threading;
+using PluginLoader2.Config;
 using PluginLoader2.Plugins;
 using PluginLoader2.ViewModels;
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -11,17 +13,18 @@ namespace PluginLoader2.Pages;
 
 partial class PluginsPage
 {
-    private async Task<bool> RefreshLocalPlugins(CancellationToken cancelToken)
+    private async Task<bool> RefreshLocalPlugins(bool init, CancellationToken cancelToken)
     {
         localPlugins.Clear();
-        localPlugins.OnPluginAdded += OnLocalPluginAdded;
+        if(init)
+            localPlugins.OnPluginAdded += OnLocalPluginAdded;
 
         try
         {
             await localPlugins.AddPluginsAsync(cancelToken);
             foreach (string folder in launcherConfig.LocalPluginRepositories)
                 await localPlugins.AddPluginsAsync(folder, cancelToken: cancelToken);
-            await localPlugins.AddPluginsAsync(loaderConfig.LocalPlugins, cancelToken);
+            await localPlugins.AddPluginsAsync(loaderConfig.LocalPlugins.Values.Select(x => x.FullPath), cancelToken);
         }
         catch(OperationCanceledException)
         {
@@ -38,7 +41,7 @@ partial class PluginsPage
         // This is called during loading of the local plugin list
         Dispatcher.UIThread.Post(() =>
         {
-            if (loaderConfig.LocalPlugins.Contains(plugin.FullPath))
+            if (loaderConfig.LocalPlugins.ContainsKey(plugin.FullPath))
                 context.LocalPlugins.Insert(0, new LocalPluginModel(plugin, true));
             else
                 context.LocalPlugins.Add(new LocalPluginModel(plugin, false));
@@ -46,16 +49,6 @@ partial class PluginsPage
         });
     }
 
-    private void PluginsGrid_CellPointerPressed(object sender, DataGridCellPointerPressedEventArgs e)
-    {
-        if (Design.IsDesignMode)
-            return;
-        if (e.Column != null && e.Cell?.DataContext is IPluginModel plugin && "Enabled".Equals(e.Column.Header))
-        {
-            plugin.Enabled = !plugin.Enabled;
-            PromptSave();
-        }
-    }
 
     private async void OnOpenLocalPluginFolderClick(object sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
@@ -76,10 +69,7 @@ partial class PluginsPage
     private async void OpenPluginMenuItemClicked(object sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         if(localPluginsGrid.SelectedItem is LocalPluginModel plugin)
-        {
-            string file = plugin.FullPath;
-            await PlatformTools.ShowFile(file);
-        }
+            await PlatformTools.ShowFile(plugin.Data.FullPath);
     }
 
 }
