@@ -8,7 +8,7 @@ using System.Xml.Serialization;
 
 namespace PluginLoader2.Loader.Compile.GitHub;
 
-class GitHubCacheManifest
+public class GitHubCacheManifest
 {
     private const string pluginFile = "plugin.dll";
     private const string manifestFile = "manifest.xml";

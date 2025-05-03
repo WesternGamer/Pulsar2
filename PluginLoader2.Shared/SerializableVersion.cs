@@ -3,7 +3,7 @@ using System.Xml.Serialization;
 
 namespace PluginLoader2;
 
-class SerializableVersion
+public class SerializableVersion
 {
     public int Major { get; set; }
 
