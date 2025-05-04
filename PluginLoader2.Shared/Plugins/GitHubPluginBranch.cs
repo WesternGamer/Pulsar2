@@ -33,6 +33,12 @@ public class GitHubPluginBranch
     [XmlElement("PackageReference")]
     public NuGetPackageId[] NuGetReferences { get; set; }
 
+    [Key(7)]
+    public bool ImplicitUsings { get; set; }
+
+    [Key(8)]
+    public bool Avalonia { get; set; }
+
     public override string ToString()
     {
         return Name;

@@ -97,7 +97,8 @@ class GitHubPlugin : IPluginInstance
     public byte[] CompileFromSource(string assemblyName, GitHubCacheManifest manifest, Branch branch)
     {
         RoslynCompiler compiler = new RoslynCompiler();
-        compiler.AddImplicitUsings();
+        if(branch.ImplicitUsings)
+            compiler.AddImplicitUsings();
 
         using (Stream s = DownloadRepo(branch.Commit))
         using (ZipArchive zip = new ZipArchive(s))
@@ -122,6 +123,11 @@ class GitHubPlugin : IPluginInstance
         {
             using (Stream entryStream = entry.Open())
                 compiler.AddSource(entryStream, entry.FullName);
+        }
+        else if(branch.Avalonia && AllowedZipPath(path, branch.SourceDirectories, ".axaml"))
+        {
+            using (Stream entryStream = entry.Open())
+                compiler.AddAvaloniaXaml(entryStream, entry.FullName);
         }
         if (IsAssetZipPath(path, branch.AssetFolder, out string assetFilePath))
         {
@@ -151,9 +157,9 @@ class GitHubPlugin : IPluginInstance
         return false;
     }
 
-    private bool AllowedZipPath(string path, string[] sourceDirectories)
+    private bool AllowedZipPath(string path, string[] sourceDirectories, string extension = ".cs")
     {
-        if (!path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase))
+        if (!path.EndsWith(extension, StringComparison.OrdinalIgnoreCase))
             return false;
 
         if (sourceDirectories == null || sourceDirectories.Length == 0)

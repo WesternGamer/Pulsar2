@@ -15,6 +15,7 @@ static class GlobalReferences
 {
     private static Dictionary<string, MetadataReference> systemReferences = [];
     private static Dictionary<AssemblyKey, MetadataReference> allReferences = [];
+    private static readonly HashSet<string> blockedAssemblies = ["VRage.Library.Generator"];
 
     public static void GenerateAssemblyList()
     {
@@ -43,7 +44,8 @@ static class GlobalReferences
         foreach (string trustedAssemblyFile in GetBinAssemblies())
         {
             if(AssemblyKey.TryGetFromFile(trustedAssemblyFile, out AssemblyKey trustedAssemblyName)
-                && !systemReferences.ContainsKey(trustedAssemblyName.Name)
+                && !systemReferences.ContainsKey(trustedAssemblyName.Name) 
+                && IsValidReference(trustedAssemblyName.Name)
                 && TryLoadAssembly(trustedAssemblyName.FullName, out Assembly trustedAssembly)
                 && loadedAssemblies.TryAdd(trustedAssemblyName, trustedAssembly))
             {
@@ -139,8 +141,12 @@ static class GlobalReferences
 
     private static bool IsValidReference(Assembly a)
     {
-        string name = a.GetName().Name;
-        return !a.IsDynamic && !string.IsNullOrWhiteSpace(a.Location) && !systemReferences.ContainsKey(name) && !name.StartsWith("System.Private");
+        return !a.IsDynamic && !string.IsNullOrWhiteSpace(a.Location) && IsValidReference(a.GetName().Name);
+    }
+
+    private static bool IsValidReference(string name)
+    {
+        return !systemReferences.ContainsKey(name) && !name.StartsWith("System.Private") && !blockedAssemblies.Contains(name);
     }
 
     private class AssemblyKey : IEquatable<AssemblyKey>

@@ -35,9 +35,15 @@
       <HintPath>..\SeBinaries\Avalonia.Base.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Avalonia.Build.Tasks.43e7eaa44ce742359b8fe2b3a5ba8800">
+      <HintPath>..\dll\Avalonia.Build.Tasks.dll</HintPath>
+    </Reference>
     <Reference Include="Avalonia.Controls">
       <HintPath>..\SeBinaries\Avalonia.Controls.dll</HintPath>
       <Private>False</Private>
+    </Reference>
+    <Reference Include="Avalonia.Generators">
+      <HintPath>..\dll\Avalonia.Generators.dll</HintPath>
     </Reference>
     <Reference Include="Game2.Game">
       <HintPath>..\SeBinaries\Game2.Game.dll</HintPath>

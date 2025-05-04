@@ -49,7 +49,7 @@ class PluginHubList
         if(cache != null && cache.Hash == hash)
         {
             Log.Info("Using cached Plugin Hub content");
-            cache.GitHubPlugins = cache.GitHubPlugins.Append(DebugPlugin()).ToArray();
+            cache.GitHubPlugins = cache.GitHubPlugins.Concat(DebugPlugin()).ToArray();
             return cache;
         }
 
@@ -74,7 +74,7 @@ class PluginHubList
         return latestHubData;
     }
 
-    private GitHubPluginData DebugPlugin()
+    private IEnumerable<GitHubPluginData> DebugPlugin()
     {
 #if DEBUG
         GitHubPluginData testPlugin = new GitHubPluginData()
@@ -94,14 +94,33 @@ class PluginHubList
                     Name = "Main",
                     Commit = "d74abbbb01640e0f0aaae9dca4beec161e28560a",
                     Version = "1.0.0",
-                    SourceDirectories = [""]
+                    ImplicitUsings = true,
                 }
             ]
         };
-        //XmlSerializer xml = new XmlSerializer(typeof(GitHubPluginData));
-        //using (FileStream fs = File.OpenWrite(@"D:\Downloads\pluginhub2test\test.xml"))
-        //    xml.Serialize(fs, testPlugin);
-        return testPlugin;
+        GitHubPluginData testPlugin2 = new GitHubPluginData()
+        {
+            Id = "SE2ExtendedPaintingUI",
+            Name = "Extended Color UI",
+            Username = "ArthurGamerHD",
+            Repository = "SE2ExtendedPaintingUI",
+            Author = "Arthur",
+            ShortDescription = "A color picker to all your color needs",
+            LongDescription = "A color picker to all your color needs",
+            Versions =
+            [
+                new GitHubPluginBranch()
+                {
+                    Id = "main",
+                    Name = "Main",
+                    Commit = "00b6d5932ee0964a7d82ec9cf730eb4689b97382",
+                    Version = "1.0.0",
+                    Avalonia = true,
+                }
+            ]
+        };
+
+        return [testPlugin, testPlugin2];
 #endif
     }
 
