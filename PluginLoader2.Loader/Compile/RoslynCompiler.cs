@@ -12,15 +12,19 @@ using System.Collections.Immutable;
 using Avalonia.Generators.NameGenerator;
 using System.Threading;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.Versioning;
+using System.Reflection.Metadata;
+using System.Reflection;
 
 namespace PluginLoader2.Loader.Compile;
 
 class RoslynCompiler
 {
+    public const int Version = 7;
+
     private readonly List<Source> source = [];
     private readonly bool debugBuild;
-    private readonly List<ISourceGenerator> generators = [];
-    private readonly List<AdditionalText> avaloniaXaml = [];
+    private AvaloniaCompiler avalonia;
 
     private static readonly string[] ImplicitUsings = [ "System", "System.Collections.Generic", "System.IO", "System.Linq", "System.Net.Http", "System.Threading", "System.Threading.Tasks" ];
 
@@ -34,11 +38,12 @@ class RoslynCompiler
     {
         source.Add(new Source(stream, fileName, debugBuild));
     }
+
     public void AddAvaloniaXaml(Stream stream, string fileName)
     {
-        if(generators.Count == 0)
-            generators.Add(new AvaloniaNameSourceGenerator());
-        avaloniaXaml.Add(new AvaloniaAdditionalText(stream, fileName));
+        if (avalonia == null)
+            avalonia = new AvaloniaCompiler();
+        avalonia.AddXaml(stream, fileName);
     }
 
     public void AddImplicitUsings()
@@ -64,12 +69,12 @@ class RoslynCompiler
                 optimizationLevel: debugBuild ? OptimizationLevel.Debug : OptimizationLevel.Release,
                 allowUnsafe: true));
 
-        if (generators.Count > 0)
+        List<ResourceDescription> resources = null;
+        if(avalonia != null)
         {
-            var generator = CSharpGeneratorDriver.Create(generators, avaloniaXaml, null, new AvaloniaTextOptionProvider());
-            generator.RunGeneratorsAndUpdateCompilation(compilation, out var afterGenCompilation, out var genDiagnostics);
-            if(afterGenCompilation is CSharpCompilation afterGenCs)
-                compilation = afterGenCs;
+            avalonia.Generate(ref compilation);
+            resources = [];
+            avalonia.GetResources(resources);
         }
 
         // write IL code into memory
@@ -78,11 +83,12 @@ class RoslynCompiler
         {
             result = compilation.Emit(assemblyOutput, debugSymbolOutput,
                 embeddedTexts: source.Select(x => x.Text),
+                manifestResources: resources,
                 options: new EmitOptions(debugInformationFormat: DebugInformationFormat.PortablePdb, pdbFilePath: Path.ChangeExtension(assemblyName, "pdb")));
         }
         else
         {
-            result = compilation.Emit(assemblyOutput);
+            result = compilation.Emit(assemblyOutput, manifestResources: resources);
         }
 
         if (!result.Success)
@@ -109,7 +115,6 @@ class RoslynCompiler
         }
 
     }
-
 
     private class Source
     {
@@ -138,63 +143,4 @@ class RoslynCompiler
         }
     }
 
-    private class AvaloniaTextOptionProvider : AnalyzerConfigOptionsProvider
-    {
-        public override AnalyzerConfigOptions GlobalOptions { get; } = new NullTextOptions();
-
-        public override AnalyzerConfigOptions GetOptions(SyntaxTree tree)
-        {
-            return GlobalOptions;
-        }
-
-        public override AnalyzerConfigOptions GetOptions(AdditionalText textFile)
-        {
-            if (textFile is AvaloniaAdditionalText avaFile)
-                return avaFile.Options;
-            return GlobalOptions;
-        }
-    }
-
-    private class NullTextOptions : AnalyzerConfigOptions
-    {
-        public override bool TryGetValue(string key, [NotNullWhen(true)] out string value)
-        {
-            value = null;
-            return false;
-        }
-    }
-
-    private class AvalonaTextOptions : AnalyzerConfigOptions
-    {
-        public override bool TryGetValue(string key, [NotNullWhen(true)] out string value)
-        {
-            if (key == "build_metadata.AdditionalFiles.SourceItemGroup")
-            {
-                value = "AvaloniaXaml";
-                return true;
-            }
-
-            value = null;
-            return false;
-        }
-    }
-
-    private class AvaloniaAdditionalText : AdditionalText
-    {
-        private readonly SourceText content;
-
-        public override string Path { get; }
-        public AnalyzerConfigOptions Options { get; set; } = new AvalonaTextOptions();
-
-        public AvaloniaAdditionalText(Stream s, string name)
-        {
-            Path = name;
-            content = SourceText.From(s);
-        }
-
-        public override SourceText GetText(CancellationToken cancellationToken = default)
-        {
-            return content;
-        }
-    }
 }

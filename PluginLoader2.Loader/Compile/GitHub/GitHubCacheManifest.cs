@@ -27,6 +27,7 @@ public class GitHubCacheManifest
 
     public string Commit { get; set; }
     public SerializableVersion GameVersion { get; set; }
+    public int CompilerVersion { get; set; }
 
     [XmlArray]
     [XmlArrayItem("File")]
@@ -91,8 +92,11 @@ public class GitHubCacheManifest
 
     public bool IsCacheValid(string currentCommit, Version currentGameVersion, bool requiresAssets, bool requiresPackages)
     {
-        if (!File.Exists(DllFile) || Commit != currentCommit)
+        if (!File.Exists(DllFile) || Commit != currentCommit || CompilerVersion < RoslynCompiler.Version)
             return false;
+
+        if(CompilerVersion > RoslynCompiler.Version)
+            Log.Warn("Manifest file indicates GitHub plugin was compiled with a Plugin Loader version that is newer than the current version.");
 
         if (currentGameVersion != null)
         {

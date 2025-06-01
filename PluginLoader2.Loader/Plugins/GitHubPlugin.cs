@@ -61,19 +61,24 @@ class GitHubPlugin : IPluginInstance
         if (!manifest.IsCacheValid(branch.Commit, gameVersion, !string.IsNullOrWhiteSpace(branch.AssetFolder), branch.NuGetReferences.Length > 0))
         {
             manifest.GameVersion = new SerializableVersion(gameVersion);
+            manifest.CompilerVersion = RoslynCompiler.Version;
             manifest.Commit = branch.Commit;
             manifest.ClearAssets();
             string name = FileUtilities.MakeSafeString(this.data.Id) + '_' + Path.GetRandomFileName();
 
-            byte[] data = CompileFromSource(name, manifest, branch);
+            RoslynCompiler compiler = new();
+            byte[] data = CompileFromSource(name, manifest, branch, compiler);
             File.WriteAllBytes(manifest.DllFile, data);
+            if(branch.Avalonia)
+                AvaloniaCompiler.InjectIl(manifest.DllFile);
             manifest.DeleteUnknownFiles();
             manifest.Save();
 
             resolver.AddSourceFolder(manifest.LibDir);
             resolver.AddAllowedAssemblyFile(manifest.DllFile);
             resolver.AddAllowedAssemblyName(name);
-            return Assembly.Load(data);
+            Assembly a = Assembly.Load(data);
+            return a;
         }
         else
         {
@@ -94,10 +99,9 @@ class GitHubPlugin : IPluginInstance
         return output;
     }
 
-    public byte[] CompileFromSource(string assemblyName, GitHubCacheManifest manifest, Branch branch)
+    public byte[] CompileFromSource(string assemblyName, GitHubCacheManifest manifest, Branch branch, RoslynCompiler compiler)
     {
-        RoslynCompiler compiler = new RoslynCompiler();
-        if(branch.ImplicitUsings)
+        if (branch.ImplicitUsings)
             compiler.AddImplicitUsings();
 
         using (Stream s = DownloadRepo(branch.Commit))
@@ -122,12 +126,12 @@ class GitHubPlugin : IPluginInstance
         if (AllowedZipPath(path, branch.SourceDirectories))
         {
             using (Stream entryStream = entry.Open())
-                compiler.AddSource(entryStream, entry.FullName);
+                compiler.AddSource(entryStream, path);
         }
         else if(branch.Avalonia && AllowedZipPath(path, branch.SourceDirectories, ".axaml"))
         {
             using (Stream entryStream = entry.Open())
-                compiler.AddAvaloniaXaml(entryStream, entry.FullName);
+                compiler.AddAvaloniaXaml(entryStream, path);
         }
         if (IsAssetZipPath(path, branch.AssetFolder, out string assetFilePath))
         {

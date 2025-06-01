@@ -27,40 +27,48 @@ namespace PluginLoader2.Loader
         [MethodImpl(MethodImplOptions.NoInlining)]
         public PluginLoader(PluginHost host)
         {
-            Directory.CreateDirectory(FileUtilities.AppData);
-
-            Log.Init(Path.Combine(FileUtilities.AppData, "logs", "loader.log"));
-
-            ISplashScreen splashScreen = GameSplashScreen.GetSplashScreen();
-
-            GlobalReferences.GenerateAssemblyList();
-
-            Log.Info("Loading config");
-            LoaderConfig config = GetConfig(splashScreen);
-            if (config == null)
-                return;
-
-            if(splashScreen.IsVisible)
+            try
             {
-                Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("PluginLoader2.Loader.splash.gif");
-                splashScreen.TakeControl(stream, "Loading...");
+
+                Directory.CreateDirectory(FileUtilities.AppData);
+
+                Log.Init(Path.Combine(FileUtilities.AppData, "logs", "loader.log"));
+
+                ISplashScreen splashScreen = GameSplashScreen.GetSplashScreen();
+
+                GlobalReferences.GenerateAssemblyList();
+
+                Log.Info("Loading config");
+                LoaderConfig config = GetConfig(splashScreen);
+                if (config == null)
+                    return;
+
+                if (splashScreen.IsVisible)
+                {
+                    Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("PluginLoader2.Loader.splash.gif");
+                    splashScreen.TakeControl(stream, "Loading...");
+                }
+
+                Log.Info("Finding plugins...");
+                StringBuilder sb = new StringBuilder();
+                sb.Append("Enabled plugins: ").AppendLine();
+                IEnumerable<PluginRuntime> githubPlugins = GetGithubPlugins(config, sb, HttpUtilities.CreateHttpClient());
+                runningPlugins.AddRange(GetLocalPlugins(config, sb).Concat(githubPlugins));
+                Log.Info(sb.ToString());
+
+                Log.Info("Creating plugin instances");
+                foreach (PluginRuntime plugin in runningPlugins)
+                    plugin.Instantiate(host);
+
+                splashScreen.ResetToDefault();
+                splashScreen = new NullSplashScreen();
+
+                Log.Info("Plugin Loader started");
             }
+            catch (Exception e)
+            {
 
-            Log.Info("Finding plugins...");
-            StringBuilder sb = new StringBuilder();
-            sb.Append("Enabled plugins: ").AppendLine();
-            IEnumerable<PluginRuntime> githubPlugins = GetGithubPlugins(config, sb, HttpUtilities.CreateHttpClient());
-            runningPlugins.AddRange(GetLocalPlugins(config, sb).Concat(githubPlugins));
-            Log.Info(sb.ToString());
-
-            Log.Info("Creating plugin instances");
-            foreach(PluginRuntime plugin in runningPlugins)
-                plugin.Instantiate(host);
-
-            splashScreen.ResetToDefault();
-            splashScreen = new NullSplashScreen();
-
-            Log.Info("Plugin Loader started");
+            }
         }
 
         private IEnumerable<PluginRuntime> GetLocalPlugins(LoaderConfig config, StringBuilder enabledPluginLog)

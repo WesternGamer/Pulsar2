@@ -32,7 +32,10 @@ namespace PluginLoader2.Init
         private static Assembly Resolve(object sender, ResolveEventArgs args)
         {
             AssemblyName targetAssembly = new AssemblyName(args.Name);
-            if (assemblies.TryGetValue(targetAssembly.Name, out string targetPath) && File.Exists(targetPath))
+            string name = targetAssembly.Name;
+            if (name.StartsWith("Avalonia.Build.Tasks."))
+                name = "Avalonia.Build.Tasks";
+            if (assemblies.TryGetValue(name, out string targetPath) && File.Exists(targetPath))
                 return Assembly.LoadFile(targetPath);
             return null;
         }
