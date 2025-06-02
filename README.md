@@ -1,2 +1,2 @@
-# PluginLoader2
-Plugin Loader for Space Engineers 2
+# Pulsar2
+Pulsar for Space Engineers 2

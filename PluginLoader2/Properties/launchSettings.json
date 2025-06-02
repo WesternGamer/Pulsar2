@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "PluginLoader2": {
-      "commandName": "Project",
-      "commandLineArgs": "--nostart"
-    }
-  }
-}

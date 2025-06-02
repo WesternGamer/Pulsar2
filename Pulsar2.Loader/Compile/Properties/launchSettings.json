@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "Pulsar2.Loader": {
+      "commandName": "Project"
+    },
+    "Profile 1": {
+      "commandName": "Executable",
+      "executablePath": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Space Engineers 2\\Game2\\SpaceEngineers2.exe",
+      "commandLineArgs": "\"-plugins:D:\\Documents\\GitHub\\sepluginloader\\Pulsar2\\Pulsar2.Init\\bin\\x64\\Debug\\net8.0-windows\\Pulsar2.Init.dll\" -nosplash"
+    }
+  }
+}
